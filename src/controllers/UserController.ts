@@ -1,20 +1,17 @@
 import { Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import {createUserZapier,getUserDataFromZapier,saveUserDataToZapier } from '../services/UserService';
+import { createUserZapier, saveUserDataToZapier, getUserDataFromZapier, getUserFromService } from '../services/UserService';
 import axios from 'axios';
-
 
 const ZAPIER_WEBHOOK_URL = process.env.ZAPIER_WEBHOOK_URL || '';
 
 const createUser = async (req: Request, res: Response) => {
-     const { name, email } = req.body;
+     const { id, name, email } = req.body;
 
-     if (!name || !email) {
-          return res.status(400).json({ error: 'Name and email are required' });
+     if (!id || !name || !email) {
+          return res.status(400).json({ error: 'ID, Name, and Email are required' });
      }
 
      try {
-          const id = uuidv4();
           const newUser = await createUserZapier({ id, name, email });
           return res.status(201).json({ message: 'User created successfully', data: newUser });
      } catch (error) {
@@ -30,7 +27,12 @@ const postData = async (req: Request, res: Response) => {
      try {
           await saveUserDataToZapier(userId, userData);
 
-          await axios.post(ZAPIER_WEBHOOK_URL, { userId, ...userData });
+          const user = await getUserFromService(userId);
+          if (!user) {
+               return res.status(404).json({ error: 'User not found' });
+          }
+
+          await axios.post(ZAPIER_WEBHOOK_URL, { user, ...userData });
 
           return res.status(200).json({ message: 'Data posted and webhook triggered' });
      } catch (error) {
