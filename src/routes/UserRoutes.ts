@@ -4,8 +4,8 @@ import { createUser, postData, getData } from '../controllers/UserController';
 
 const router = express.Router();
 router.post('', createUser);
-router.post(':id/data', postData);
-router.get(':id/data', getData);
+router.post('/:id/data', postData);
+router.get('/:id/data', getData);
 
 
 export default router;
